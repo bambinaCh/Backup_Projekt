@@ -3,12 +3,10 @@
 Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backups eines Systems. Das Skript kann durch einen Cronjob regelmässig ausgeführt werden, um sicherzustellen, dass wichtige Daten stets gesichert sind.
 
 ## Autoren
-
 - Benedict Brück
 - Chaimaa El Jarite
 
 ## Funktionen
-
 - Erstellen von komprimierten Backup-Dateien (tar.gz).
 - Automatische Speicherung der Backup-Dateien in einem definierten Verzeichnis.
 - Optionales Löschen alter Backups, um Speicherplatz zu sparen.
@@ -18,7 +16,6 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 - Protokollierung von Backup-Aktivitäten in einer Log-Datei.
 
 ## Anforderungen
-
 - Return Codes
 - if else / while / switch / for
 - Test
@@ -35,7 +32,6 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 ## Verwendung
 
 ### Skript erstellen / speichern
-
 1. Erstelle eine Datei namens `backup_script.sh` 
 
 2. Mach das Skript ausführbar:
