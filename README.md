@@ -9,13 +9,17 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 
 ## Funktionen
 
-- Erstellen von komprimierten Backup-Dateien (tar.gz).
-- Automatische Speicherung der Backup-Dateien in einem definierten Verzeichnis.
-- Optionales Löschen alter Backups, um Speicherplatz zu sparen.
-- Automatisierung der Backups durch Einsatz eines Cronjobs.
-- Verwaltung von Dateiberechtigungen.
-- Ausgabe und Überprüfung von Return Codes zur Fehlerbehandlung.
-- Protokollierung von Backup-Aktivitäten in einer Log-Datei.
+- Return Codes
+- if else / while / switch / for
+- Test
+- File Permission
+- Shebang
+- I/O Stream/Redirection
+- Shell Variablen
+- Functions (sinnvolle Namensgebung)
+- [] und [[ ]] richtig anwenden
+- String  vergleich
+- Config um Variablen auszulesen
 
 ## Anforderungen
 
