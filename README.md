@@ -9,6 +9,16 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 
 ## Funktionen
 
+- Erstellen von komprimierten Backup-Dateien (tar.gz).
+- Automatische Speicherung der Backup-Dateien in einem definierten Verzeichnis.
+- Optionales Löschen alter Backups, um Speicherplatz zu sparen.
+- Automatisierung der Backups durch Einsatz eines Cronjobs.
+- Verwaltung von Dateiberechtigungen.
+- Ausgabe und Überprüfung von Return Codes zur Fehlerbehandlung.
+- Protokollierung von Backup-Aktivitäten in einer Log-Datei.
+
+## Anforderungen
+
 - Return Codes
 - if else / while / switch / for
 - Test
@@ -21,13 +31,6 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 - String  vergleich
 - Config um Variablen auszulesen
 
-## Anforderungen
-
-- Unix-ähnliches Betriebssystem (Linux, macOS)
-- Bash
-- tar (Standard Unix-Tool)
-- cron (für die Automatisierung)
-- Kenntnisse in den Bereichen Unix Utilities, File Permissions, Return Codes, Kontrollstrukturen (if, for, while), Funktionen und Skript-Good Practices
 
 ## Verwendung
 
