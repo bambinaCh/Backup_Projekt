@@ -2,25 +2,57 @@
 
 # Backup-Skript zur Sicherung eines Verzeichnisses
 
-# Variablen definieren
-SOURCE_DIR="/path/to/source"        # Verzeichnis, das gesichert werden soll
-DEST_DIR="/path/to/backup"          # Zielverzeichnis für das Backup
+
+CONFIG_FILE="backup_config.cfg"     # Konfigurationsdatei laden
+
+# Prüfen, ob Konfigurationsdatei vorhanden ist, und setzte Variablen aus config_file
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+else
+    echo "Fehler: Config-Datei $CONFIG_FILE nicht gefunden."
+    exit 1
+fi
+
+# definierte Variablen aus config_file laden
+SOURCE_DIR="$SOURCE_DIR"            # Verzeichnis, das gesichert werden soll
+DEST_DIR="$DEST_DIR"                # Zielverzeichnis für das Backup
+LOG_FILE="$LOG_FILE"                # Log-Datei
+
+#Aktuelles Datum und Uhrzeit
 DATE=$(date +%Y-%m-%d_%H-%M-%S)     # Aktuelles Datum und Uhrzeit
-BACKUP_FILE="backup_$DATE.tar.gz"   # Name der Backup-Datei
-LOG_FILE="/path/to/log/backup.log"  # Log-Datei
 
 # Funktion zur Protokollierung
 log() {
     echo "$(date +%Y-%m-%d_%H-%M-%S) : $1" >> "$LOG_FILE"
 }
 
+# Anzahl Argumente Prüfen
+check_arguments() {
+    if [[ $# -lt 2 ]];then
+        log "Usage: $0 <source_dir> <dest_dir> OR $0 <source_dir> <dest_dir> <Backup_name>"
+        exit 1
+    elif [ $# -gt 3 ]; then
+        log "Usage: $0 <source_dir> <dest_dir> <backup_name> OR $0 <source_dir> <dest_dir>"
+        exit 1
+    else [ $# -eq 3 ]
+        if [ -n "$3" ]; then
+            BACKUP_FILE="backup_$3_$DATE.tar.gz"
+            Log "3 arguments are passed, Backup name is $BACKUP_FILE"
+        else
+            BACKUP_FILE="backup_$DATE.tar.gz"
+            Log "2 arguments are passed, Backup name is $BACKUP_FILE"
+        fi
+    fi
+}
+
 # Berechtigungen überprüfen
 check_permissions() {
+    # if no permission to read source directory
     if [ ! -r "$SOURCE_DIR" ];then
         log "Fehler: Kein Leserecht für das Quellverzeichnis $SOURCE_DIR."
         exit 1
     fi
-
+    # if no permission to write destination directory
     if [ ! -w "$DEST_DIR" ];then
         log "Fehler: Kein Schreibrecht für das Zielverzeichnis $DEST_DIR."
         exit 1
@@ -53,6 +85,10 @@ delete_old_backups() {
 
 # Hauptfunktion
 main() {
+    Log "check if 2 or 3 arguments are passed"
+
+    check_arguments
+
     log "Backup gestartet"
 
     check_permissions
