@@ -2,14 +2,20 @@
 
 # Backup-Skript zur Sicherung eines Verzeichnisses
 
+# definiere einige Farben für die Konsolenausgabe
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # Keine Farbe
 
-CONFIG_FILE="backup_config.cfg"     # Konfigurationsdatei laden
+# Konfigurationsdatei laden
+CONFIG_FILE="backup_config.cfg"
 
 # Prüfen, ob Konfigurationsdatei vorhanden ist, und setzte Variablen aus config_file
 if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 else
-    echo "Fehler: Config-Datei $CONFIG_FILE nicht gefunden."
+    log "${RED}Fehler: Config-Datei $CONFIG_FILE nicht gefunden.${NC}"
     exit 1
 fi
 
@@ -23,24 +29,24 @@ DATE=$(date +%Y-%m-%d_%H-%M-%S)     # Aktuelles Datum und Uhrzeit
 
 # Funktion zur Protokollierung
 log() {
-    echo "$(date +%Y-%m-%d_%H-%M-%S) : $1" >> "$LOG_FILE"
+    echo -e "$(date +%Y-%m-%d_%H-%M-%S) : $1" >> "$LOG_FILE"
 }
 
 # Anzahl Argumente Prüfen
 check_arguments() {
     if [[ $# -lt 2 ]];then
-        log "Usage: $0 <source_dir> <dest_dir> OR $0 <source_dir> <dest_dir> <Backup_name>"
+        log "${RED}Usage: $0 <source_dir> <dest_dir> OR $0 <source_dir> <dest_dir> <Backup_name>${NC}"
         exit 1
     elif [ $# -gt 3 ]; then
-        log "Usage: $0 <source_dir> <dest_dir> <backup_name> OR $0 <source_dir> <dest_dir>"
+        log "${RED}Usage: $0 <source_dir> <dest_dir> <backup_name> OR $0 <source_dir> <dest_dir>${NC}"
         exit 1
     else [ $# -eq 3 ]
-        if [ -n "$3" ]; then
+        if [[ -n "$3" ]]; then
             BACKUP_FILE="backup_$3_$DATE.tar.gz"
-            Log "3 arguments are passed, Backup name is $BACKUP_FILE"
+            log "${CYAN}3 arguments are passed, Backup name is $BACKUP_FILE${NC}"
         else
             BACKUP_FILE="backup_$DATE.tar.gz"
-            Log "2 arguments are passed, Backup name is $BACKUP_FILE"
+            Log "${CYAN}2 arguments are passed, Backup name is $BACKUP_FILE${NC}"
         fi
     fi
 }
@@ -49,12 +55,12 @@ check_arguments() {
 check_permissions() {
     # if no permission to read source directory
     if [ ! -r "$SOURCE_DIR" ];then
-        log "Fehler: Kein Leserecht für das Quellverzeichnis $SOURCE_DIR."
+        log "${RED}Fehler: Kein Leserecht für das Quellverzeichnis $SOURCE_DIR.${NC}"
         exit 1
     fi
-    # if no permission to write destination directory
+    # if no permission to write in destination directory
     if [ ! -w "$DEST_DIR" ];then
-        log "Fehler: Kein Schreibrecht für das Zielverzeichnis $DEST_DIR."
+        log "${RED}Fehler: Kein Schreibrecht für das Zielverzeichnis $DEST_DIR.${NC}"
         exit 1
     fi
 }
@@ -65,9 +71,9 @@ create_backup() {
     TAR_EXIT_CODE=$?
 
     if [ $TAR_EXIT_CODE -eq 0 ];then
-        log "Backup erfolgreich erstellt: $DEST_DIR/$BACKUP_FILE"
+        log "${GREEN}Backup erfolgreich erstellt: $DEST_DIR/$BACKUP_FILE${NC}"
     else
-        log "Fehler beim Erstellen des Backups"
+        log "${RED}Fehler beim Erstellen des Backups${NC}"
         exit 1
     fi
 }
@@ -75,27 +81,28 @@ create_backup() {
 # Alte Backups löschen
 delete_old_backups() {
     find "$DEST_DIR" -type f -name "backup_*.tar.gz" -mtime +7 -exec rm {} \;
+    find "$DEST_DIR" -type f -name "backup_*_*.tar.gz" -mtime +7 -exec rm {} \;
     FIND_EXIT_CODE=$?
 
     if [ $FIND_EXIT_CODE -ne 0 ];then
-        log "Fehler beim Löschen alter Backups"
+        log "${RED}Fehler beim Löschen alter Backups${NC}"
         exit 1
     fi
 }
 
 # Hauptfunktion
 main() {
-    Log "check if 2 or 3 arguments are passed"
+    Log "${CYAN}check if 2 or 3 arguments are passed${NC}"
 
     check_arguments
 
-    log "Backup gestartet"
+    log "${CYAN}Backup gestartet${NC}"
 
     check_permissions
     create_backup
     delete_old_backups
 
-    log "Backup abgeschlossen"
+    log "${GREEN}Backup abgeschlossen${NC}"
 }
 
 # Skript starten
