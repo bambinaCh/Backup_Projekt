@@ -33,10 +33,11 @@ else
 fi
 
 # definierte Variablen aus config_file laden
-SOURCE_DIR="$SOURCE_DIR"              # Verzeichnis, das gesichert werden soll
-DEST_DIR="$DEST_DIR"                  # Zielverzeichnis für das Backup
-LOG_FILE="$LOG_FILE"                  # Log-Datei
-RETENTION_PERIOD="$RETENTION_PERIOD"  # Anzahl Tage, wie lange Backups aufbewahrt werden sollen
+SOURCE_DIR="$SOURCE_DIR"                # Verzeichnis, das gesichert werden soll
+DEST_DIR="$DEST_DIR"                    # Zielverzeichnis für das Backup
+LOG_FILE="$LOG_FILE"                    # Log-Datei
+LOG_DELETED_FILES="$LOG_DELETED_FILES"  # Log-Datei für gelöschte Dateien
+RETENTION_PERIOD="$RETENTION_PERIOD"    # Anzahl Tage, wie lange Backups aufbewahrt werden sollen
 
 #Aktuelles Datum und Uhrzeit
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
@@ -54,10 +55,10 @@ check_Backup_name() {
     log "${LIGHTGREEN}Success: Backupname wurde hinzugefügt, der neue Backupname ist ${BACKUP_FILE}${NC}"
 
   elif [ $# -eq 0 ];then
-    echo -e "${CYAN}Möchtest du dem Backup einen eigenen Namen geben?(yes/no): ${NC}"
+    echo -e "${CYAN}Input: Möchtest du dem Backup einen eigenen Namen geben?(yes/no): ${NC}"
     read -r ANSWER
     if [[ "$ANSWER" == "yes" ]];then
-      echo -e "${CYAN}Bitte gib einen Backup Namen ein: ${NC}"
+      echo -e "${CYAN}Input: Bitte gib einen Backup Namen ein: ${NC}"
       read -r BACKUP_NAME
       BACKUP_FILE="backup_${BACKUP_NAME}_${DATE}.tar.gz"
       log "${LIGHTGREEN}Success: Backupname wurde hinzugefügt, der neue Backupname ist ${BACKUP_FILE}${NC}"
@@ -85,10 +86,10 @@ check_arguments() {
       fi
       # test ob retention_period in config_file gesetzt ist
       if [[ -z "$RETENTION_PERIOD" ]]; then
-        log "${RED}Error: Retention period must be provided in the config_file and cannot be empty.${NC}"
+        log "${RED}Error: Retention period muss im config_file angegeben sein und darf nicht leer sein.${NC}"
         exit 2
       fi
-      log "${LIGHTGREEN}Success: alle Argumente sind richtig gesetzt und nicht leer.${NC}"
+      log "${LIGHTGREEN}Success: Alle Argumente sind richtig gesetzt und nicht leer.${NC}"
     fi
 }
 
@@ -130,11 +131,19 @@ create_backup() {
 
 # Alte Backups löschen
 delete_old_backups() {
-    find "$DEST_DIR" -type f -name "backup_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \;
-    find "$DEST_DIR" -type f -name "backup_*_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \;
-    FIND_EXIT_CODE=$?
+    # suche nach Dateien in einem Verzeichnisbaum ($? ist der Exit-Code des letzten Befehls)
+    # -type f: Datei
+    # -name "backup_*.tar.gz": Dateiname beginnt mit backup_ und endet mit .tar.gz
+    # -mtime +${RETENTION_PERIOD}: Datei wurde vor mehr als ${RETENTION_PERIOD} Tagen geändert (modifiziert)
+    # -exec rm {}: führt löschung der gefundenen Dateien aus
+    # >> LOG_DELETED_FILES: schreibt die gelöschten Dateien in die Log-Datei
+    find "$DEST_DIR" -type f -name "backup_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> LOG_DELETED_FILES
+    FIND_EXIT_CODE1=$?
 
-    if [ $FIND_EXIT_CODE -ne 0 ];then
+    find "$DEST_DIR" -type f -name "backup_*_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> LOG_DELETED_FILES
+    FIND_EXIT_CODE2=$?
+
+    if [ $FIND_EXIT_CODE1 -ne 0 || $FIND_EXIT_CODE2 -ne 0 ];then
         log "${RED}Error: Fehler beim Löschen alter Backups${NC}"
         exit 2
     fi
@@ -146,14 +155,20 @@ main() {
 
     add_Backup_name
 
-    log "${CYAN}prüfe variablen aus config_file und Umgebung${NC}"
+    log "${CYAN}prüfe Variablen aus config_file und Umgebung${NC}"
 
     check_arguments "$@"
 
-    log "${CYAN}Backup gestartet${NC}"
+    log "${CYAN}Berechtigungen überprüfen${NC}"
 
     check_permissions
+
+    log "${CYAN}Backup gestartet${NC}"
+
     create_backup
+
+    log "${CYAN}Lösche alte Backups${NC}"
+
     delete_old_backups
 
     log "${GREEN}Backup abgeschlossen${NC}"
