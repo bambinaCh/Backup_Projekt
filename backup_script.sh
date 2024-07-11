@@ -90,7 +90,7 @@ check_permissions() {
   fi
 
   if [[ ! -r "$SOURCE_DIR" ]]; then
-    echo -e "${RED}Error: Kein Leserecht für das Quellverzeichnis ${SOURCE_DIR}.${NC}"
+    echo -e "${RED}Error: Keine Leserecht für das Quellverzeichnis ${SOURCE_DIR}.${NC}"
     log "Error: Kein Leserecht für das Quellenverzeichnis ${DEST_DIR, wird erstellt}."
 
     exit 1
