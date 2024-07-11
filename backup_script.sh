@@ -63,7 +63,7 @@ create_hirarchie() {
     mkdir -p "${DEST_DIR}/${LOG_DIR}"
     chmod a+w "${DEST_DIR}/${LOG_DIR}"
   fi
-  echo "${LIGHTGREEN}Backup-Structur erstellt.${NC}"
+  echo -e "${LIGHTGREEN}Backup-Structur erstellt.${NC}"
   log "Backup-Structur erstellt."
 }
 
@@ -180,6 +180,7 @@ main() {
   log "Backup-Skript gestartet"
 
   check_Backup_name "$@"
+  create_hirarchie
   check_arguments
   check_permissions
   create_backup
