@@ -3,7 +3,7 @@
 # Author: El Jarite und Brück
 # Description: Shell-Skript zum Erstellen von Backups
 # Shell-Application: ./backup_script.sh oder ./backup_script.sh <Backup_name>
-# require: backup_config.cfg
+# require: backup_config.cfg for variables
 
 # echo "The script name is: $0"
 # echo "The first argument is: $1"
@@ -13,15 +13,15 @@
 # echo "Alle Argumente, aufgeteilt: $@"
 
 # definiere einige Farben für die Konsolenausgabe
-GREEN='\033[0;32m' # Grün
-LIGHTGREEN='\033[1;32m' # Hellgrün
-BLUE='\033[0;34m' # Blau
-RED='\033[0;31m' # Rot
-ORANGE='\033[0;33m' # Orange
-YELLOW='\033[1;33m' # Gelb
-CYAN='\033[0;36m' # Cyan
-MAGENTA='\033[0;35m' # Magenta
-NC='\033[0m' # Keine Farbe
+GREEN='\033[0;32m'          # Grün
+LIGHTGREEN='\033[1;32m'     # Hellgrün
+BLUE='\033[0;34m'           # Blau
+RED='\033[0;31m'            # Rot
+ORANGE='\033[0;33m'         # Orange
+YELLOW='\033[1;33m'         # Gelb
+CYAN='\033[0;36m'           # Cyan
+MAGENTA='\033[0;35m'        # Magenta
+NC='\033[0m'                # Keine Farbe
 
 # Konfigurationsdatei laden
 CONFIG_FILE="backup_config.cfg"
@@ -97,7 +97,7 @@ check_permissions() {
   fi
 
   if [[ ! -d "$DEST_DIR" ]]; then
-    echo -  "${ORANGE}Warnung: Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt.${NC}"
+    echo -e  "${ORANGE}Warnung: Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt.${NC}"
     log "Warnung: das Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt."
     mkdir -p "$DEST_DIR"
     chmod a+w "$DEST_DIR"
