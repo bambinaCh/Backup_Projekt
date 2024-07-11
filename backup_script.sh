@@ -12,8 +12,6 @@
 # echo "Alle Argumente: $*"
 # echo "Alle Argumente, aufgeteilt: $@"
 
-
-
 # definiere einige Farben für die Konsolenausgabe
 GREEN='\033[0;32m' # Grün
 LIGHTGREEN='\033[1;32m' # Hellgrün
@@ -25,158 +23,171 @@ CYAN='\033[0;36m' # Cyan
 MAGENTA='\033[0;35m' # Magenta
 NC='\033[0m' # Keine Farbe
 
-# Konfigurationsdatei laden und Variablen für source_dir, dest_dir, log_file and retention_period setzen
+# Konfigurationsdatei laden
 CONFIG_FILE="backup_config.cfg"
 
-# Prüfen, ob Konfigurationsdatei vorhanden ist, und setzte Variablen aus config_file
+# Funktion zur Protokollierung
+log() {
+  echo -e "$(date +%Y-%m-%d_%H-%M-%S) : $1" >> "${DEST_DIR}/${LOG_DIR}/${LOG_FILE}"
+}
+
+# Prüfen, ob Konfigurationsdatei vorhanden ist, und setze Variablen aus config_file
 if [[ -f "$CONFIG_FILE" ]]; then
   source "$CONFIG_FILE"
+  echo -e "${LIGHTGREEN}Config_Datei gefunden.${NC}"
+  log "Config Datei gefunden."
 else
-  log "${RED}Error: Config-Datei ${CONFIG_FILE} nicht gefunden.${NC}"
+  echo -e "${RED}Error: Config-Datei ${CONFIG_FILE} nicht gefunden.${NC}"
+  log "Config-Datei nicht gefunden."
   exit 1
 fi
 
-# definierte Variablen aus config_file laden
-SOURCE_DIR="$SOURCE_DIR"                # Verzeichnis, das gesichert werden soll
-DEST_DIR="$DEST_DIR"                    # Zielverzeichnis für das Backup
-LOG_FILE="$LOG_FILE"                    # Log-Datei
-LOG_DELETED_FILES="$LOG_DELETED_FILES"  # Log-Datei für gelöschte Dateien
-RETENTION_PERIOD="$RETENTION_PERIOD"    # Anzahl Tage, wie lange Backups aufbewahrt werden sollen
+# definiere Variablen aus config_file
+SOURCE_DIR="${SOURCE_DIR}"
+DEST_DIR="${DEST_DIR}"
+LOG_DIR="${LOG_DIR}"
+LOG_FILE="${LOG_FILE}"
+LOG_DELETED_FILES="${LOG_DELETED_FILES}"
+RETENTION_PERIOD="${RETENTION_PERIOD}"
+
+# Hirarchie der Backupstructur prüfen und falls nicht vorhanden, erweitern
+create_hirarchie() {
+  if [[ ! -d "$DEST_DIR" ]]; then
+    echo -e "${ORANGE}Warnung: Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt.${NC}"
+    log "Warnung: Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt"
+    mkdir -p "$DEST_DIR"
+    chmod a+w "$DEST_DIR"
+  fi
+
+  if [[ ! -d "${DEST_DIR}/${LOG_DIR}" ]]; then
+    mkdir -p "${DEST_DIR}/${LOG_DIR}"
+    chmod a+w "${DEST_DIR}/${LOG_DIR}"
+  fi
+  echo "${LIGHTGREEN}Backup-Structur erstellt.${NC}"
+  log "Backup-Structur erstellt."
+}
 
 #Aktuelles Datum und Uhrzeit
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 
-# Funktion zur Protokollierung
-log() {
-  # $1 ist in diesem fall hier nicht mehr das argument(welches mitgegeben werden kann, sondern der Text aus der logfunction(error or success)
-  echo -e "$(date +%Y-%m-%d_%H-%M-%S) : $1" >> "$LOG_FILE"
-}
-
-# Backup-Name hinzufügen
-check_Backup_name() {
-  if [ $# -eq 1 ];then
-    BACKUP_FILE="backup_$1_$DATE.tar.gz"
-    log "${LIGHTGREEN}Success: Backupname wurde hinzugefügt, der neue Backupname ist ${BACKUP_FILE}${NC}"
-
-  elif [ $# -eq 0 ];then
-    echo -e "${CYAN}Input: Möchtest du dem Backup einen eigenen Namen geben?(yes/no): ${NC}"
-    read -r ANSWER
-    if [[ "$ANSWER" == "yes" ]];then
-      echo -e "${CYAN}Input: Bitte gib einen Backup Namen ein: ${NC}"
-      read -r BACKUP_NAME
-      BACKUP_FILE="backup_${BACKUP_NAME}_${DATE}.tar.gz"
-      log "${LIGHTGREEN}Success: Backupname wurde hinzugefügt, der neue Backupname ist ${BACKUP_FILE}${NC}"
-    else
-      BACKUP_FILE="backup_${DATE}.tar.gz"
-      log "${LIGHTGREEN}Success: Backupname wurde hinzugefügt, der neue Backupname ist default${NC}"
-    fi
-  else
-    log "${ORANGE}Usage: $0 oder $0 <Backup_name>${NC}"
-    exit 2
-  fi
-}
-
 # Argumente aus config_file prüfen
 check_arguments() {
-  # test ob source_dir und dest_dir in config_file gesetzt sind
-  if [[ -z "$SOURCE_DIR" || -z "$DEST_DIR" ]]; then
-    log "${RED}Error: Source_dir und dest_dir müssen im config_file angegeben sein und dürfen nicht leer sein.${NC}"
+  if [[ -z "$SOURCE_DIR" || -z "$DEST_DIR" || -z "$LOG_FILE" || -z "$RETENTION_PERIOD" ]]; then
+    echo -e "${RED}Error: Eine oder mehrere notwendige Variablen sind nicht in der config_file angegeben.${NC}"
+    log "eine oder mehrere Variablen sind im config file nicht angegeben."
     exit 2
-  else
-    # test ob log_file in config_file gesetzt ist
-    if [[ -z "$LOG_FILE" ]]; then
-      log "${RED}Error: Log_file muss im config_file angegeben sein und darf nicht leer sein.${NC}"
-      exit 2
-    fi
-    # test ob retention_period in config_file gesetzt ist
-    if [[ -z "$RETENTION_PERIOD" ]]; then
-      log "${RED}Error: Retention period muss im config_file angegeben sein und darf nicht leer sein.${NC}"
-      exit 2
-    fi
-    log "${LIGHTGREEN}Success: Alle Argumente sind richtig gesetzt und nicht leer.${NC}"
   fi
+  echo -e "${LIGHTGREEN} alle Agrumente sind richtig gesetzt und nicht leer.${NC}"
+  log "Alle Argumente sind richtig gesetzt und nicht leer."
 }
 
 # Berechtigungen überprüfen
 check_permissions() {
-  # check die Berechtigung zum lesen in source_dir
-  if [[ ! -r "$SOURCE_DIR" ]];then
-      log "${RED}Error: Kein Leserecht für das Quellverzeichnis ${SOURCE_DIR}.${NC}"
-      exit 1
+  if [[ ! -e "$SOURCE_DIR" ]]; then
+    echo -e "${RED}Error: Quellverzeichnis ${SOURCE_DIR} existiert nicht.${NC}"
+    log "Error: Das Quellenverzeichnis ${DEST_DIR} nicht gefunden, wird erstellt."
+    exit 1
   fi
-  # check die Berechtigung zum schreiben in dest_dir
-  if [[ ! -w "$DEST_DIR" ]];then
-      log "${RED}Error: Kein Schreibrecht für das Zielverzeichnis ${DEST_DIR}.${NC}"
-      exit 1
+
+  if [[ ! -r "$SOURCE_DIR" ]]; then
+    echo -e "${RED}Error: Kein Leserecht für das Quellverzeichnis ${SOURCE_DIR}.${NC}"
+    log "Error: Kein Leserecht für das Quellenverzeichnis ${DEST_DIR, wird erstellt}."
+
+    exit 1
   fi
+
+  if [[ ! -d "$DEST_DIR" ]]; then
+    echo -  "${ORANGE}Warnung: Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt.${NC}"
+    log "Warnung: das Zielverzeichnis ${DEST_DIR} existiert nicht, wird erstellt."
+    mkdir -p "$DEST_DIR"
+    chmod a+w "$DEST_DIR"
+  fi
+
+  if [[ ! -w "$DEST_DIR" ]]; then
+    echo -e "${RED}Error: Kein Schreibrecht für das Zielverzeichnis ${DEST_DIR}.${NC}"
+    log "Warnung: Kein Schreibrecht für das Zielverzeichnis ${DEST_DIR}."
+    exit 1
+  fi
+
+  if [[ ! -d "${DEST_DIR}/${LOG_DIR}" ]]; then
+    mkdir -p "${DEST_DIR}/${LOG_DIR}"
+    chmod a+w "${DEST_DIR}/${LOG_DIR}"
+  fi
+
+  if [[ ! -w "${DEST_DIR}/${LOG_DIR}" ]]; then
+    echo -e "${RED}Error: Kein Schreibrecht für das Log-Verzeichnis ${DEST_DIR}/${LOG_DIR}.${NC}"
+    log "Warnung: Kein Schreibrecht für Log-Verzeichnis ${DEST_DIR}/${LOG_DIR}."
+    exit 1
+  fi
+  echo -e "${LIGHTGREEN}Alle Berechtigungen sind in Ordnung.${NC}"
+  log "Alle Berechntigungen sind in Ordnung!"
+}
+
+# Backup-Name hinzufügen
+check_Backup_name() {
+  if [[ $# -eq 1 ]]; then
+    BACKUP_FILE="backup_$1_$DATE.tar.gz"
+  elif [[ $# -eq 0 ]]; then
+    read -p "Möchtest du dem Backup einen eigenen Namen geben? (y/n):" ANSWER
+    if [[ "$ANSWER" == "y" ]]; then
+      read -p "Bitte gib einen Backup Namen ein:" BACKUP_NAME
+      BACKUP_FILE="backup_${BACKUP_NAME}_${DATE}.tar.gz"
+    else
+      BACKUP_FILE="backup_${DATE}.tar.gz"
+    fi
+  else
+    echo -e "${CYAN}Usage: $0 oder $0 <Backup_name>${NC}"
+    log "Usage: $0 oder $0 <Backup_name>"
+    exit 2
+  fi
+  echo -e "${LIGHTGREEN}Backupname wurde hinzugefügt: ${BACKUP_FILE}.${NC}"
+  log "Backupname wurde hinzugefügt: ${BACKUP_FILE}"
 }
 
 # Backup erstellen
 create_backup() {
-  # tar: tape archive, genutzt zum erstellen, verwalten und extrahieren von Archivdateien
-  # kann mehrere Dateien und Verzechnisse in einem Archiv zusammenfassen
-  # -c: erstellt ein neues Archiv
-  # -z: Kompression mit gzip
-  # -v: ausführliche Ausgabe
-  # -f: spezifiziert den Dateinamen des Archivs, hier "$DEST_DIR/$BACKUP_FILE"
-  tar -czvf "$DEST_DIR/$BACKUP_FILE" "$SOURCE_DIR"
-
-  # tar gibt exit code zurück. 0 bedeutet Erfolg, 1 bedeutet Fehler
+  tar -czvf "${DEST_DIR}/${BACKUP_FILE}" "$SOURCE_DIR"
   TAR_EXIT_CODE=$?
 
-  # check if exit code is 0 or else
-  if [ $TAR_EXIT_CODE -eq 0 ];then
-      log "${LIGHTGREEN}Success: Backup erfolgreich erstellt: ${DEST_DIR}/${BACKUP_FILE}${NC}"
+  if [[ $TAR_EXIT_CODE -eq 0 ]]; then
+    echo -e "${LIGHTGREEN}Success: Backup erfolgreich erstellt: ${DEST_DIR}/${BACKUP_FILE}${NC}"
+    log "Success: Backup erfolgreich erstellt: ${DEST_DIR}/${BACKUP_FILE}"
   else
-      log "${RED}Error: Fehler beim Erstellen des Backups${NC}"
-      exit 2
+    echo -e "${RED}Error: Fehler beim Erstellen des Backups${NC}"
+    log "Error: Fehler beim Erstellen des Backups"
+    exit 2
   fi
 }
 
 # Alte Backups löschen
 delete_old_backups() {
-  # suche nach Dateien in einem Verzeichnisbaum ($? ist der Exit-Code des letzten Befehls)
-  # -type f: Datei
-  # -name "backup_*.tar.gz": Dateiname beginnt mit backup_ und endet mit .tar.gz
-  # -mtime +${RETENTION_PERIOD}: Datei wurde vor mehr als ${RETENTION_PERIOD} Tagen geändert (modifiziert)
-  # -exec rm {}: führt löschung der gefundenen Dateien aus
-  # >> LOG_DELETED_FILES: schreibt die gelöschten Dateien in die Log-Datei
-  find "$DEST_DIR" -type f -name "backup_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> LOG_DELETED_FILES
+  find "$DEST_DIR" -type f -name "backup_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> "${DEST_DIR}/${LOG_DIR}/${LOG_DELETED_FILES}"
   FIND_EXIT_CODE1=$?
 
-  find "$DEST_DIR" -type f -name "backup_*_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> LOG_DELETED_FILES
+  find "$DEST_DIR" -type f -name "backup_*_*.tar.gz" -mtime +${RETENTION_PERIOD} -exec rm {} \; >> "${DEST_DIR}/${LOG_DIR}/${LOG_DELETED_FILES}"
   FIND_EXIT_CODE2=$?
 
-  if [ $FIND_EXIT_CODE1 -ne 0 || $FIND_EXIT_CODE2 -ne 0 ];then
-      log "${RED}Error: Fehler beim Löschen alter Backups${NC}"
-      exit 2
+  if [[ $FIND_EXIT_CODE1 -ne 0 || $FIND_EXIT_CODE2 -ne 0 ]]; then
+    echo -e "${RED}Error: Fehler beim Löschen alter Backups.${NC}"
+    log "Error: Fehler beim löschen alter Backups."
+    exit 2
   fi
 }
 
 # Hauptfunktion
 main() {
-    log "${CYAN}Backup-Skript gestartet${NC}"
+  echo -e "${LIGHTGREEN}Backupscript gestartet.${NC}"
+  log "Backup-Skript gestartet"
 
-    add_Backup_name
+  check_Backup_name "$@"
+  check_arguments
+  check_permissions
+  create_backup
+  delete_old_backups
 
-    log "${CYAN}prüfe Variablen aus config_file und Umgebung${NC}"
-
-    check_arguments "$@"
-
-    log "${CYAN}Berechtigungen überprüfen${NC}"
-
-    check_permissions
-
-    log "${CYAN}Backup gestartet${NC}"
-
-    create_backup
-
-    log "${CYAN}Lösche alte Backups${NC}"
-
-    delete_old_backups
-
-    log "${GREEN}Backup abgeschlossen${NC}"
-    exit 0
+  echo -e "${GREEN}Backup erfolgreich abgeschlossen.${NC}"
+  log "Backup erfolgreich abgeschlossen."
+  exit 0
 }
 
 # Skript starten

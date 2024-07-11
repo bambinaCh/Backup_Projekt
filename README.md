@@ -34,13 +34,18 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 ### Skript erstellen / speichern
 1. Erstelle eine Datei namens `backup_script.sh` 
 
-2. Mach das Skript ausführbar:
+2. um sicher zu stellen, das auch die beiden Files backup_script.sh und backup_config.cfg auch richtig eingelesen werden, müssen wir erst noch auf beide 
+    ```dos2unix <filename>```
+ausführen, da die files in einer Windowsumgebung geschrieben wurden. dafür müssen wir erst einmal dos2unix in unserem Terminal installieren und danach auf das script als auch auf die config_file anwenden.
+so können wir sie nun auch richtig auslesen.
+
+2. Mach das Skript ausführbar (im gleichen Verzeichnis wie wir aktuell sind):
 
     ```bash
-    chmod +x backup_script.sh
+    ./backup_script.sh oder ./backup_script.sh <Backup_Name>
     ```
 
-3. Passe die Variablen `SOURCE_DIR`, `DEST_DIR` und `LOG_FILE` nach Bedarf an.
+3. Passe die Variablen `SOURCE_DIR`, `DEST_DIR` `LOG_DIR`, `LOG_FILE`, `LOG_DELETED_FILES` und `RETENTION_PERIOD` nach Bedarf an.
 
 ### Cronjob einrichten
 
