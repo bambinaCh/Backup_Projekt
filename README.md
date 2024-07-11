@@ -34,7 +34,7 @@ Dieses Projekt besteht aus einem Skript zur automatisierten Erstellung von Backu
 ### Skript erstellen / speichern
 1. Erstelle eine Datei namens `backup_script.sh` 
 
-2. um sicher zu stellen, das auch die beiden Files backup_script.sh und backup_config.cfg auch richtig eingelesen werden, müssen wir erst noch auf beide 
+2. um sicher zu stellen, das die beiden Files backup_script.sh und backup_config.cfg auch richtig eingelesen werden, müssen wir erst noch auf beide 
     ```dos2unix <filename>```
 ausführen, da die files in einer Windowsumgebung geschrieben wurden. dafür müssen wir erst einmal dos2unix in unserem Terminal installieren und danach auf das script als auch auf die config_file anwenden.
 so können wir sie nun auch richtig auslesen.

@@ -77,7 +77,7 @@ check_arguments() {
     log "eine oder mehrere Variablen sind im config file nicht angegeben."
     exit 2
   fi
-  echo -e "${LIGHTGREEN} alle Agrumente sind richtig gesetzt und nicht leer.${NC}"
+  echo -e "${LIGHTGREEN}Alle Agrumente sind richtig gesetzt und nicht leer.${NC}"
   log "Alle Argumente sind richtig gesetzt und nicht leer."
 }
 
